@@ -1,0 +1,233 @@
+
+import random
+import streamlit as st
+
+st.set_page_config(
+    page_title="Hana & Mochi 🐱",
+    page_icon="🐱",
+    layout="centered",
+)
+
+# Initialize pet data for this session
+defaults = {
+    "happiness": 70,
+    "fullness": 70,
+    "energy": 70,
+    "hearts": 0,
+    "level": 1,
+    "message": "Mochi is so happy to see you, Hana! 💗",
+    "pet_name": "Mochi",
+    "unlocked_notes": [],
+}
+
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+def clamp(value):
+    return max(0, min(100, value))
+
+
+def act(action):
+    s = st.session_state
+
+    if action == "feed":
+        s.fullness = clamp(s.fullness + 20)
+        s.happiness = clamp(s.happiness + 5)
+        s.hearts += 1
+        s.message = random.choice([
+            "Meeeow! That was delicious! 🍓",
+            "Mochi's tummy is full. Thank you, Hana! 💗",
+            "You always know my favorite snacks! 🐾",
+        ])
+
+    elif action == "play":
+        if s.energy < 10:
+            s.message = "Mochi is sleepy! Let's take a nap first. 🌙"
+            return
+
+        s.happiness = clamp(s.happiness + 18)
+        s.energy = clamp(s.energy - 12)
+        s.fullness = clamp(s.fullness - 5)
+        s.hearts += 2
+        s.message = random.choice([
+            "Wheeee! Let's play again! 🎾",
+            "You're my favorite playmate, Hana! 💕",
+            "That was so much fun! 🐾",
+        ])
+
+    elif action == "hug":
+        s.happiness = clamp(s.happiness + 12)
+        s.hearts += 1
+        s.message = random.choice([
+            "Big virtual hug for Hana! 🫂",
+            "Purr purr... Mochi loves cuddles! 💗",
+            "You made my little heart happy! 🐱",
+        ])
+
+    elif action == "sleep":
+        s.energy = clamp(s.energy + 25)
+        s.message = "Zzz... Mochi is dreaming of fish and flowers. 🌙"
+
+    # Level up every 10 hearts
+    new_level = 1 + s.hearts // 10
+    if new_level > s.level:
+        s.level = new_level
+        s.message += f" ✨ LEVEL UP! Welcome to Level {new_level}!"
+
+    # Unlock a special note at 10 hearts
+    if s.hearts >= 10 and 2 not in s.unlocked_notes:
+        s.unlocked_notes.append(2)
+
+
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(180deg, #fff0f6, #ffe0eb);
+}
+.block-container {
+    max-width: 720px;
+    padding-top: 2rem;
+}
+.hero {
+    background: #fffafd;
+    border: 2px solid #ffb6d0;
+    border-radius: 26px;
+    padding: 24px 16px;
+    text-align: center;
+}
+.pet {
+    font-size: 115px;
+    text-align: center;
+    padding: 8px;
+}
+.bubble {
+    background: white;
+    border: 1px solid #ffc2d8;
+    border-radius: 18px;
+    padding: 16px;
+    text-align: center;
+    color: #94365f;
+    font-size: 18px;
+}
+h1, h2, h3 {
+    color: #d63372;
+}
+div.stButton > button {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1px solid #ff8db5;
+    background: #ff5b96;
+    color: white;
+    font-weight: bold;
+}
+div.stButton > button:hover {
+    background: #e8437c;
+    color: white;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="hero">
+    <div style="font-size:42px">💗 🐾 💗</div>
+    <h1>Hana's Little Virtual Pet</h1>
+    <p>A tiny friend made to bring you a little happiness.</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.write("")
+
+# Pet name and status
+st.markdown(
+    f'<div class="pet">🐱</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    f'<div class="bubble"><b>{st.session_state.pet_name} says:</b>'
+    f'<br>{st.session_state.message}</div>',
+    unsafe_allow_html=True,
+)
+
+st.write("")
+
+a, b, c = st.columns(3)
+a.metric("💖 Hearts", st.session_state.hearts)
+b.metric("⭐ Level", st.session_state.level)
+c.metric("🐱 Best friend", "Hana")
+
+st.subheader("How is Mochi feeling?")
+
+for label, key, emoji in [
+    ("Happiness", "happiness", "😊"),
+    ("Fullness", "fullness", "🍓"),
+    ("Energy", "energy", "⚡"),
+]:
+    st.write(f"{emoji} **{label}: {st.session_state[key]}/100**")
+    st.progress(st.session_state[key] / 100)
+
+st.subheader("Spend time with Mochi")
+
+left, right = st.columns(2)
+
+with left:
+    if st.button("🍓 Feed Mochi"):
+        act("feed")
+        st.rerun()
+
+    if st.button("🫂 Give a hug"):
+        act("hug")
+        st.rerun()
+
+with right:
+    if st.button("🎾 Play together"):
+        act("play")
+        st.rerun()
+
+    if st.button("🌙 Take a nap"):
+        act("sleep")
+        st.rerun()
+
+st.subheader("🎁 Secret surprises")
+
+if st.session_state.hearts >= 10:
+    st.success("You unlocked Mochi's special letter! 💌")
+    st.markdown("""
+    > Dear Hana,
+    >
+    > Just like Mochi's little world gets brighter
+    > when you visit, I hope you always find reasons
+    > to smile. You deserve all the lovely things
+    > life has to offer. 💗
+    >
+    > — Lix Aldrin
+    """)
+else:
+    remaining = 10 - st.session_state.hearts
+    st.info(
+        f"Collect {remaining} more hearts "
+        "to unlock a special letter! 💌"
+    )
+
+with st.expander("✏️ Change Mochi's name"):
+    new_name = st.text_input(
+        "Choose a pet name",
+        value=st.session_state.pet_name,
+        max_chars=20,
+    )
+    if st.button("Save name"):
+        if new_name.strip():
+            st.session_state.pet_name = new_name.strip()
+            st.session_state.message = (
+                f"{new_name.strip()} says hello to Hana! 💗"
+            )
+            st.rerun()
+
+st.divider()
+st.markdown(
+    "<center>Made with courage and ❤️ by Lix Aldrin</center>",
+    unsafe_allow_html=True,
+)
